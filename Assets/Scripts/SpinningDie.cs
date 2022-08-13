@@ -19,7 +19,11 @@ public class SpinningDie : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!this.desiredOrientation.HasValue) {
+        // Listen for inputs for rotating cube
+        ((System.Action)( delegate {
+            if (this.desiredOrientation.HasValue) {
+                return;
+            }
             System.Tuple<Vector3, Vector3> perspectiveSpin = null;
             if(Input.GetKeyDown(KeyCode.DownArrow)) {
                 perspectiveSpin = System.Tuple.Create(Vector3.back, Vector3.down);
@@ -36,10 +40,12 @@ public class SpinningDie : MonoBehaviour
                     Quaternion.Inverse(this.transform.rotation) * perspectiveSpin.Item2
                 );
             }
-        }
+            return;
+        }))();
     }
 
     void FixedUpdate() {
+        // Smoothly rotate cube if in rotating mode
         if (this.desiredOrientation.HasValue) {
             if (Quaternion.Angle(this.transform.rotation, this.desiredOrientation.Value) < 0.01f) {
                 this.transform.rotation = this.desiredOrientation.Value;
