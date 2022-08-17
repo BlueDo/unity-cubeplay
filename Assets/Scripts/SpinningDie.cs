@@ -10,10 +10,16 @@ public class SpinningDie : MonoBehaviour
 
     private Quaternion? desiredOrientation = null;
 
+    private TMPro.TextMeshProUGUI text;
+
+    public int health = 3;
+
     // Start is called before the first frame update
     void Start()
     {
-        this.rigidBodyComponent = this.GetComponent<Rigidbody>();
+        this.rigidBodyComponent = this.GetComponentInChildren<Rigidbody>();
+        this.text = this.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        this.changeHealth(3);
     }
 
     // Update is called once per frame
@@ -35,10 +41,10 @@ public class SpinningDie : MonoBehaviour
                 perspectiveSpin = System.Tuple.Create(Vector3.back, Vector3.right);
             }
             if (perspectiveSpin != null) {
-                this.desiredOrientation = this.transform.rotation * Quaternion.FromToRotation(
-                    Quaternion.Inverse(this.transform.rotation) * perspectiveSpin.Item1, 
-                    Quaternion.Inverse(this.transform.rotation) * perspectiveSpin.Item2
-                );
+                this.QueueSpin(Quaternion.FromToRotation(
+                    perspectiveSpin.Item1,
+                    perspectiveSpin.Item2
+                ));
             }
             return;
         }))();
@@ -47,12 +53,25 @@ public class SpinningDie : MonoBehaviour
     void FixedUpdate() {
         // Smoothly rotate cube if in rotating mode
         if (this.desiredOrientation.HasValue) {
-            if (Quaternion.Angle(this.transform.rotation, this.desiredOrientation.Value) < 0.01f) {
-                this.transform.rotation = this.desiredOrientation.Value;
+            if (Quaternion.Angle(rigidBodyComponent.transform.localRotation, this.desiredOrientation.Value) < 0.01f) {
+                rigidBodyComponent.transform.localRotation = this.desiredOrientation.Value;
                 this.desiredOrientation = null;
             } else {
-                this.transform.rotation = Quaternion.RotateTowards(this.transform.rotation, this.desiredOrientation.Value, Time.fixedDeltaTime * 90 * 4);
+                rigidBodyComponent.transform.localRotation = Quaternion.RotateTowards(rigidBodyComponent.transform.localRotation, this.desiredOrientation.Value, Time.fixedDeltaTime * 90 * 4);
             }
         }
+    }
+
+    public void QueueSpin(Quaternion perspectiveSpin) {
+        this.changeHealth(this.health - 1);
+        this.desiredOrientation = rigidBodyComponent.transform.localRotation * Quaternion.FromToRotation(
+            Quaternion.Inverse(rigidBodyComponent.transform.localRotation) * Vector3.forward, 
+            Quaternion.Inverse(rigidBodyComponent.transform.localRotation) * (perspectiveSpin* Vector3.forward)
+        );
+    }
+
+    void changeHealth(int newHealth) {
+        this.health = newHealth;
+        this.text.SetText($"HP: {this.health}");
     }
 }
