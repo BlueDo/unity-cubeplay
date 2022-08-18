@@ -7,6 +7,8 @@ public class DialogueBox : MonoBehaviour
 
     UnityEngine.UI.Button button;
 
+    List<System.Action<Quaternion>> buttonClickListeners = new List<System.Action<Quaternion>>();
+
     TMPro.TMP_Dropdown dropdown;
 
     internal class OptionDataWithId<T>: TMPro.TMP_Dropdown.OptionData {
@@ -19,6 +21,18 @@ public class DialogueBox : MonoBehaviour
     void Start()
     {
         this.button = this.GetComponentInChildren<UnityEngine.UI.Button>();
+        this.button.onClick.AddListener(
+            (delegate {
+                TMPro.TMP_Dropdown.OptionData genericOption = this.dropdown.options[this.dropdown.value];
+                if (!(genericOption is OptionDataWithId<Quaternion>)) {
+                    return;
+                }
+                OptionDataWithId<Quaternion> option = (OptionDataWithId<Quaternion>) this.dropdown.options[this.dropdown.value];
+                foreach (var action in this.buttonClickListeners) {
+                    action(option.payload);
+                }
+            })
+        );
 
         this.dropdown = this.GetComponentInChildren<TMPro.TMP_Dropdown>();
         this.dropdown.AddOptions(
@@ -37,15 +51,6 @@ public class DialogueBox : MonoBehaviour
     }
 
     public void AddButtonClickListener(System.Action<Quaternion> action) {
-        this.button.onClick.AddListener(
-            (delegate {
-                TMPro.TMP_Dropdown.OptionData genericOption = this.dropdown.options[this.dropdown.value];
-                if (!(genericOption is OptionDataWithId<Quaternion>)) {
-                    return;
-                }
-                OptionDataWithId<Quaternion> option = (OptionDataWithId<Quaternion>) this.dropdown.options[this.dropdown.value];
-                action(option.payload);
-            })
-        );
+        this.buttonClickListeners.Add(action);
     }
 }
